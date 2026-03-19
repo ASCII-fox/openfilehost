@@ -1,5 +1,9 @@
 #!/bin/bash 
 
+# Variables
+ENVIRONMENT="pyenv"
+PACKAGES=("fastapi")
+
 # Functions 
 state() {
   echo "[SETUP] $1"
@@ -7,14 +11,22 @@ state() {
 
 checkpackages() {
   echo "[PACKAGES] Checking for missing packages..."
-  # TODO: IMPLEMENT
+# List of required packages
+
+  for package in "${PACKAGES[@]}"; do
+      if pip show "$package" > /dev/null 2>&1; then
+          echo "[PACKAGES] $package is already installed."
+      else
+          echo "[PACKAGES] $package not found. Installing..."
+          pip install "$package"
+      fi
+  done
 }
 
 runscript() {
+  echo "Done! Running server..."
   # python3 pyserver.py
 }
-# Variables
-ENVIRONMENT="pyenv"
 
 # Check if python exists
 if command -v python &>/dev/null || command -v python3 &>/dev/null; then
