@@ -1,1 +1,45 @@
-<!-- TODO: IMPLEMENT -->
+<!DOCTYPE html> 
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Open File Host - Web Interface</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<meta name="description" content="" />
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/style.css">
+	</head>
+	<body>
+    <div class="header">
+		Open File Host - Web Interface
+    </div>
+    <div class="content">
+      <h2>Info</h2>
+      <hr>
+    EXPOSITION
+
+    <hr class="break">
+    <h2>File select</h2>
+    <hr>
+    <form>
+<label for="fileInput" class="button">Choose a file</label>
+<input type="file" id="fileInput" hidden>
+<div id="fileInfo" style="margin-top:1em;white-space: pre-line;">No file selected.</div>
+
+
+<button type="submit" id="uploadButton" class="button" style="margin-top:1em;" disabled>Upload</button>
+<div id="uploadResult" style="margin-top:1em;"></div>
+
+
+    <hr class="break">
+    <h2>Configuration</h2>
+    <hr>
+
+
+    </form>
+    </div>
+	</body>
+
+  <script src="/static/helpers.js"></script>
+  <script src="/static/javascript.js"></script>
+</html>
+

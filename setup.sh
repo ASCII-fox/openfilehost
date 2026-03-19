@@ -2,7 +2,7 @@
 
 # Variables
 ENVIRONMENT="pyenv"
-PACKAGES=("fastapi" "uvicorn")
+PACKAGES=("fastapi" "uvicorn" "python-multipart")
 
 # Functions 
 state() {
