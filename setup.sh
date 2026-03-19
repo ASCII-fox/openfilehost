@@ -23,10 +23,13 @@ checkpackages() {
   done
 }
 
-runscript() {
-  echo "Done! Running server..."
+startserver() {
+  echo "Starting server..."
   python run.py
 }
+
+# Timer start
+start=$(date +%s.%N)
 
 # Check if python exists
 if command -v python &>/dev/null || command -v python3 &>/dev/null; then
@@ -53,6 +56,10 @@ else
 fi
 
 # Should assume at this point that we are in the environment and that packages 
-# are properly set up, can run main script now
+# are properly set up, end the setup timer and start the server
+end=$(date +%s.%N)
+runtime=$(echo "$end - $start" | bc)
+state "Done! Total setup time: ${runtime} seconds"
 
-runscript
+startserver
+
