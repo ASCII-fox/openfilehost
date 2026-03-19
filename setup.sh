@@ -2,7 +2,7 @@
 
 # Variables
 ENVIRONMENT="pyenv"
-PACKAGES=("fastapi")
+PACKAGES=("fastapi" "uvicorn")
 
 # Functions 
 state() {
@@ -25,7 +25,7 @@ checkpackages() {
 
 runscript() {
   echo "Done! Running server..."
-  # python3 pyserver.py
+  python run.py
 }
 
 # Check if python exists
