@@ -1,3 +1,4 @@
 pyenv/
 __pycache__/
 upload/
+files.db
