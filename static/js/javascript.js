@@ -25,7 +25,7 @@ fileInput.addEventListener("change", function() {
     "File Size: " + fileSizeFormatted + " (" + file.size + " bytes)\n" +
     "File Last Modified: " + fileLastModified + "\n";
   
-  uploadButton.disabled = false; // Enable upload button
+  uploadButton.disabled = false;
 });
 
 form.addEventListener("submit", async function(e) {
@@ -42,7 +42,16 @@ form.addEventListener("submit", async function(e) {
   try {
     const response = await fetch("/upload", { method: "POST", body: formData });
     const result = await response.json();
-    uploadResult.innerHTML = `Uploaded: <a href="/uploaded/${result.filename}" target="_blank">${result.filename}</a>`;
+
+    if (result.status == "ok") {
+      console.log(result);
+      uploadResult.innerHTML = "Message from server: " + result.message + "\n" +
+                               "Download key: " + result.key;
+    } else {
+      console.log(result);
+      uploadResult.innerHTML = "Upload failed!\n" +
+                               "Message from server: " + result.message;
+    }
     
     // Reset
     fileInput.value = "";
