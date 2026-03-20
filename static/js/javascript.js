@@ -5,6 +5,7 @@ console.log("Hello");
 // Upload functionality
 const uploadButton = document.getElementById("uploadButton");
 const uploadResult = document.getElementById("uploadResult");
+const serverPolicies = document.getElementById("serverPolicies");
 const fileInfoDiv = document.getElementById("fileInfo");
 const form = document.querySelector("form");
 
@@ -51,3 +52,26 @@ form.addEventListener("submit", async function(e) {
     uploadResult.textContent = "Upload failed";
   }
 });
+
+
+async function queryPolicies() {
+
+  console.log("Attempting to get policies...");
+  try {
+    const response = await fetch("policies", {method: "GET"});
+    const result = await response.json();
+
+    if (result.access == 1) {
+      serverPolicies.innerText = 
+        "File lifetime: " + formatTime(result.fileLifetime);
+
+    } else {
+      serverPolicies.innerText = "Hidden.";
+
+    }
+  } catch (error) {
+      serverPolicies.innerText = "Failed to get server policies."
+  }
+
+
+}

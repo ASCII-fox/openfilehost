@@ -42,7 +42,8 @@ fi
 state "Checking if python environment exists..."
 
 if [ ! -d "$ENVIRONMENT" ]; then
-  state "Environment not found, creating it."
+  state "Environment not found! Creating it."
+  state "First time set up might take some time!"
   python -m venv $ENVIRONMENT
   state "Installing packages..."
   source $ENVIRONMENT/bin/activate

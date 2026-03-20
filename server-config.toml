@@ -1,0 +1,21 @@
+[server]
+port = 8000
+
+# Refers to the maximum total file size of all documents in /upload/
+maxsize = "15mb"
+
+# How long a file should exist on the server in seconds 
+filelifetime = 3600
+
+# How often the server should check if a file's lifetime has expired
+# and needs to be deleted
+deletionchecktime = 60
+
+[interface]
+
+# Controls whether "filelifetime" are shown to users.
+# 1 = True. Should be shown.
+# 0 = False (Fallback). Do not show.
+shouldfileconfigbepublic = 1
+
+

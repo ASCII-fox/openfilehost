@@ -35,6 +35,10 @@ form {
   margin: 1em 0;
 }
 
+a {
+  color: #fff;
+}
+
 .break {
   border: none;
   width: 100%;
