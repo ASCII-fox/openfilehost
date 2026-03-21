@@ -10,24 +10,28 @@ from pathlib import Path
 
 # packages
 import bitmath
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 # local modules
-from database import *
+from database import * # UPLOAD_DIR is defined here
 from python.helpers import *
 
 with open("server-config.toml", "rb") as f:
     config = tomllib.load(f)
 
-
+# Server config
 maxCapacity = bitmath.parse_string(config["server"]["maxsize"]) # Max server capacity in bytes
 jobFrequency = config["server"]["deletionchecktime"] # How many seconds between each cleanup job
+fileMaxLifetime = config["server"]["maxfilelifetime"]
+basicAccess = config["interface"]["shouldfileconfigbepublic"]
 
+# Color variables
 CYAN = "\033[96m"
 GREEN = '\033[32m'
 RESET = "\033[0m"
+JOB = f"{CYAN}[JOB]{RESET}"
 
 print(f"""=== CONFIGURATION ===============
 SERVER CAPACITY: {maxCapacity.bytes} bytes
@@ -39,23 +43,26 @@ async def cleanupExpiredFiles():
     while True:
         # === CLEAN UP SECTION ===
         try:
-            print(f"{CYAN}[JOB]{RESET} Running file cleanup job at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"{JOB} Running file cleanup job at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
-            time.sleep(1)  # test
             
-            # TODO: IMPLEMENT
+            expiredFiles = getExpiredFiles()  # Returns list
+            for downloadKey in expiredFiles:
+                # Delete from uploads and db
+                removeFile(downloadKey)
             
+            print(f"{JOB} Deleted {len(expiredFiles)} files.")
         except Exception as e:
-            print(f"{CYAN}[JOB]{RESET} Error in cleanup job: {e}")
+            print(f"{JOB} Error in cleanup job: {e}")
         
         # === WAITING ===
         try:
             nextRunTime = datetime.now() + timedelta(seconds=jobFrequency)
-            print(f"{CYAN}[JOB]{RESET} Completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Next job at {nextRunTime.strftime('%Y-%m-%d %H:%M:%S')}")            
+            print(f"{JOB} Completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Next job at {nextRunTime.strftime('%Y-%m-%d %H:%M:%S')}")            
 
             await asyncio.sleep(jobFrequency)
         except asyncio.CancelledError:
-            print(f"{CYAN}[JOB]{RESET} Cancellation recieved.")
+            print(f"{JOB} Cancellation recieved.")
             break
 
 
@@ -64,7 +71,6 @@ async def lifespan(app: FastAPI):
     
     # Start the background job
     backgroundJob = asyncio.create_task(cleanupExpiredFiles())
-    print(f"{CYAN}[JOB]{RESET} File cleanup job started!")
     
     yield  # Server
     
@@ -74,13 +80,10 @@ async def lifespan(app: FastAPI):
         await backgroundJob
     except asyncio.CancelledError:
         pass
-    print(f"{CYAN}[JOB]{RESET} File cleanup job stopped!")
+    print(f"{JOB} File cleanup job stopped!")
 
 app = FastAPI(lifespan=lifespan)
 
-# Make sure upload directory exists
-UPLOAD_DIR = Path("upload")
-UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 # Setup directories 
@@ -93,10 +96,12 @@ async def root():
     return HTMLResponse(content=Path("static/index.html").read_text())
 
 @app.post("/upload")
-async def uploadFile(file: UploadFile = File(...)):
-    
+async def uploadFile(
+    file: UploadFile = File(...), # User file
+    life: int = Form(...)  # User requested lifetime for the file
+):    
     # Get current directory size
-    currentCapacity = getDirectorySize("upload")
+    currentCapacity = queryKnownSize()
     uploadedFileSize = file.size
     
     # Check if adding the new file would exceed capacity
@@ -105,10 +110,13 @@ async def uploadFile(file: UploadFile = File(...)):
             "status": "error", 
             "message": "File too large: Would cause total allowed size to be exceeded."
         }
+
+    if (life > fileMaxLifetime or life < 0):
+        life = fileMaxLifetime
     
     # Generate download key
-    random_bytes = os.urandom(6)
-    downloadKey = int.from_bytes(random_bytes, byteorder='big')
+    random_bytes = os.urandom(16)
+    downloadKey = random_bytes.hex()
     
     # Get file extension
     originalFilename = file.filename
@@ -134,24 +142,41 @@ async def uploadFile(file: UploadFile = File(...)):
     addFile(
             name=originalFilename,
             downloadKey=downloadKey,
-            size=uploadedFileSize
+            size=uploadedFileSize,
+            expireTime=life
             )
 
     return {
         "status": "ok", 
         "message": "Upload succeeded!",
-        "key": downloadKey
+        "key": downloadKey,
+        "life": life if basicAccess == 1 else -1
     }
 
 
 @app.get("/policies")
 async def getPolicies():
-    basicAccess = config["interface"]["shouldfileconfigbepublic"]
     if (basicAccess == 1):
-        fileLifetime = config["server"]["filelifetime"]
-        return {"access": 1, "fileLifetime": fileLifetime}
+        return {"access": 1, "fileLifetime": fileMaxLifetime}
     else:
         return{"access": 0}
 
 
+@app.get("/query")
+async def serveQuery(key: str):
+    fileInfo = getFileInfoFromKey(key)
+    if fileInfo == -1:
+        return {"status": -1}
+    else:
+        status = "ok"
+        fileName = fileInfo[0]
+        size = fileInfo[1]
+        createdDate = fileInfo[2]
+        expireDate = fileInfo[3]
+
+        return {"status": status,
+                "fileName": fileName,
+                "size": size,
+                "createdDate": createdDate,
+                "expireDate": expireDate}
 

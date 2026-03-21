@@ -6,11 +6,10 @@ port = 8000
 maxsize = "15MB"
 
 # How long a file should exist on the server in seconds 
-filelifetime = 3600
+maxfilelifetime = 3600
 
-# How often the server should check if a file's lifetime has expired
-# and needs to be deleted in seconds
-deletionchecktime = 3
+# Time between file deletion jobs in seconds.
+deletionchecktime = 3600
 
 # Whether or not everything uploaded should be deleted when the server closes.
 # 1 = True. Delete everything on shutdown.

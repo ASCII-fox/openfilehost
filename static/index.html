@@ -1,51 +1,91 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<title>Open File Host - Web Interface</title>
-		<meta name="viewport" content="width=device-width,initial-scale=1" />
-		<meta name="description" content="" />
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Open File Host - Web Interface</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="" />
     <link rel="icon" href="/static/res/icon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/style.css">
-	</head>
+</head>
 
-	<body onload="queryPolicies();">
+<body onload="queryPolicies();">
+    <!-- Header -->
     <div class="header">
-		Open File Host - Web Interface
+        Open File Host - Web Interface |
+        <a href="static/download.html" class="sublink">Query download key</a>
     </div>
+
+    <!-- Content -->
     <div class="content">
-      <h2>Policies</h2>
-      <hr>
-      <p>
-    Welcome to Open File Host. This server's policies are:
-    </p>
-    <p id="serverPolicies" style="white-space: pre-line;">
 
-    </p>
+        <h2>Policies</h2>
+        <hr>
+        <p>
 
-    <hr class="break">
-    <h2>File select</h2>
-    <hr>
-    <form>
-<label for="fileInput" class="button">Choose a file</label>
-<input type="file" id="fileInput" hidden>
-<div id="fileInfo" style="margin-top:1em;white-space: pre-line;">No file selected.</div>
+            This server's policies are:
+        </p>
+        <p id="serverPolicies" style="white-space: pre-line;">
 
+        </p>
 
-<button type="submit" id="uploadButton" class="button" style="margin-top:1em;" disabled>Upload</button>
-<div id="uploadResult" style="margin-top:1em;white-space: pre-line;"></div>
+        <hr class="break">
+        <h2>File select</h2>
+        <hr>
 
+        <form>
+            <label for="fileInput" class="button">Choose a file</label>
+            <input type="file" id="fileInput" hidden>
+            <div id="fileInfo" style="margin-top:1em;white-space: pre-line;">No file selected.</div>
 
-    <hr class="break">
-    <h2>Configuration</h2>
-    <hr>
+            <button type="submit" id="uploadButton" class="button" style="margin-top:1em;" disabled>Upload</button>
+            <div id="uploadResult" style="margin-top:1em;white-space: pre-line;"></div>
 
+        </form>
+        <h2>Important</h2>
+        <hr>
 
-    </form>
+        <p>
+        The only time you will be shown your download key is after uploading. Without the download key, you cannot:
+        <ol>
+        <li>Download the file.</li>
+        <li>Query the file.</li>
+        <li>Freely delete the file from the server. It will be stored until it expires.</li>
+        </ol>
+        Also understand that anyone you share the download key with will be able to do the above three actions.
+        </p>
     </div>
-	</body>
-  <script src="/static/js/helpers.js"></script>
-  <script src="/static/js/javascript.js"></script>
+
+    <!-- Configuration -->
+    <div class="configuration">
+        <h2>Configuration</h2>
+        <hr>
+
+        Hover over any of the options below for information on what they do. <br>
+        <hr class="break">
+
+        <label 
+            for="fileLifetime" 
+            class="text-label hoverable">
+        File lifetime (seconds)</label>
+        <div class="tooltip">Controls how long the file exists on the server before being deleted. If this value is invalid, left empty, or exceeds the server policy rule, it will use the maximum time permitted.</div>
+        <input type="text" id="fileLifetime">
+        <br><br>
+
+        <label 
+            for="randomizeFileName" 
+            class="text-label hoverable">
+          Randomize file name</label>
+        <div class="tooltip">If enabled, will randomize the name of the file before uploading. Will NOT change the extension.</div>
+        <input type="checkbox" id="randomizeFileName">
+        <br><br>
+
+
+    </div>
+
+</body>
+<script src="/static/js/helpers.js"></script>
+<script src="/static/js/javascript.js"></script>
 
 </html>
-

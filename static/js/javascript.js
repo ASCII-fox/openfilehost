@@ -9,6 +9,8 @@ const serverPolicies = document.getElementById("serverPolicies");
 const fileInfoDiv = document.getElementById("fileInfo");
 const form = document.querySelector("form");
 
+const fileLifetime = document.getElementById("fileLifetime");
+
 fileInput.addEventListener("change", function() {
   const file = this.files[0];
   if (!file) {
@@ -32,12 +34,17 @@ form.addEventListener("submit", async function(e) {
   e.preventDefault();
   
   const file = fileInput.files[0];
+  var fileTime = parseInt(fileLifetime.value);
+  if (isNaN(fileTime))
+    fileTime = -1;
   if (!file) return;
   
   uploadResult.textContent = "Uploading...";
   
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("life", fileTime);
+  
   
   try {
     const response = await fetch("/upload", { method: "POST", body: formData });
@@ -45,8 +52,10 @@ form.addEventListener("submit", async function(e) {
 
     if (result.status == "ok") {
       console.log(result);
+      const reportedLifetimeValue = (result.life == -1) ? "Hidden by server." : result.life; 
       uploadResult.innerHTML = "Message from server: " + result.message + "\n" +
-                               "Download key: " + result.key;
+                               "Download key: " + result.key + "\n" +
+                               "File lifetime: " + reportedLifetimeValue;
     } else {
       console.log(result);
       uploadResult.innerHTML = "Upload failed!\n" +
@@ -72,7 +81,7 @@ async function queryPolicies() {
 
     if (result.access == 1) {
       serverPolicies.innerText = 
-        "File lifetime: " + formatTime(result.fileLifetime);
+        "Maximum file lifetime: " + result.fileLifetime + " seconds " + "(" + formatTime(result.fileLifetime) + ")";
 
     } else {
       serverPolicies.innerText = "Hidden.";

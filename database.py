@@ -2,37 +2,82 @@
 # functions
 
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
+from python.helpers import getDirectorySize
+from pathlib import Path
 
 fileDB = sqlite3.connect("files.db")
 cursor = fileDB.cursor()
 
+# Ensure upload dir exists
+UPLOAD_DIR = Path("upload")
+UPLOAD_DIR.mkdir(exist_ok=True)
+# color text
+DBLUE = "\033[38;5;27m"
+RED = "\033[91m"
+GREEN = "\033[92m"
+RESET = "\033[0m"
+DATABASE = f"{DBLUE}[DATABASE]{RESET}"
+ADDED = f"{GREEN}Added{RESET}"
+DELETED = f"{RED}Deleted{RESET}"
+
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        pathName TEXT NOT NULL,
+        pathName TEXT NOT NULL PRIMARY KEY,
         size INTEGER NOT NULL,
-        created_at TIMESTAMP
+        createdDate TIMESTAMP,
+        expireDate TIMESTAMP
     )
 """)
 
-def addFile(name, downloadKey, size):
+def addFile(name, downloadKey, size, expireTime):
     cursor.execute(
-        "INSERT INTO files (name, pathName, size, created_at) VALUES (?, ?, ?, ?)",
-        (name, downloadKey, size, datetime.now())
+        "INSERT INTO files (name, pathName, size, createdDate, expireDate) VALUES (?, ?, ?, ?, ?)",
+        (name, downloadKey, size, datetime.now(), datetime.now() + timedelta(seconds=expireTime))
     )
+    print(f"{DATABASE} {ADDED} file {downloadKey}")
     fileDB.commit()
+
+def removeFile(downloadKey):
+    filePath = UPLOAD_DIR / downloadKey
+    if filePath.exists():
+        filePath.unlink()
+        print(f"{DATABASE} {DELETED} file: {filePath}")
+    else:
+        print(f"{DATABASE} File not found: {filePath}")
+
+
+    cursor.execute("DELETE FROM files WHERE pathName = ?", (downloadKey,))
+    fileDB.commit()
+
+# return an array in the form of [name, size, createdDate, expireDate]
+def getFileInfoFromKey(downloadKey):
+    cursor.execute(
+        "SELECT name, size, createdDate, expireDate FROM files WHERE pathName = ?",
+        (downloadKey,)
+    )
+    result = cursor.fetchone()
+    
+    if result:
+        return list(result)
+    else:
+        # Return -1 if not found
+        return -1
 
 
 # returns an array of files that need to be deleted
-def getExpiredFiles(fileLifetime):
+def getExpiredFiles():
     cursor.execute(
-        "SELECT id, name, pathName, size, created_at FROM files WHERE datetime(created_at, ?) < datetime('now')",
-        (f'+{fileLifetime} seconds',)
+        "SELECT pathName FROM files WHERE datetime(expireDate) < datetime('now')",
     )
-    return cursor.fetchall()
+    return [row[0] for row in cursor.fetchall()]
 
+# gets the size of upload/ according to this database
+def queryKnownSize():
+    cursor.execute("SELECT SUM(size) FROM files")
+    result = cursor.fetchone()
+    return result[0] if result[0] is not None else 0
 
 if __name__ == "__main__":
     cursor.execute("PRAGMA table_info(files)")
@@ -46,8 +91,10 @@ if __name__ == "__main__":
         print(" | ".join(str(value) for value in row))
 
     print("Printing expired rows:")
-    expiredRows = getExpiredFiles(200)
-    for row in expiredRows:
-        print(" | ".join(str(value) for value in row))
+    expiredRows = getExpiredFiles()
+    for downloadKey in expiredRows:
+        print(downloadKey)
 
+    print(f"Total db size: {queryKnownSize()}");
+    print(f"According to getDirectorySize, it is {getDirectorySize('upload')}")
     fileDB.close()

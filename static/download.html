@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
-		<title>Open File Host - Download Interface</title>
+		<title>Open File Host - Query</title>
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<meta name="description" content="" />
     <link rel="icon" href="/static/res/icon.ico" type="image/x-icon">
@@ -10,32 +10,35 @@
 	</head>
 	<body>
     <div class="header">
-		Open File Host - Download Interface
+		Open File Host - Query |
+    <a href="/" class="sublink">Upload file</a>
     </div>
-    <div class="content">
-      <h2>Info</h2>
-      <hr>
-    Welcome to the download section.
-
-    <hr class="break">
-    <h2>File key</h2>
+    <div class="downloadSection">
+    <h2>Query Key</h2>
     <hr>
     <form>
-<label for="fileInput" class="button">Choose a file</label>
-<input type="file" id="fileInput" hidden>
-<div id="fileInfo" style="margin-top:1em;white-space: pre-line;">No file selected.</div>
+<label for="keyInput" class="text-label hoverable">Enter your download key:</label>
+<div class="tooltip">This is shown to the uploader when the file is successfully uploaded to the server.</div>
+<input type="text" id="keyInput">
+    <hr class="break">
+<button type="submit" id="queryButton" class="button" style="margin-top:1em;">Query key</button>
 
-
-<button type="submit" id="uploadButton" class="button" style="margin-top:1em;" disabled>Upload</button>
-<div id="uploadResult" style="margin-top:1em;"></div>
-
+<div id="keyInfo" style="margin-top:1em;white-space: pre-line;">Waiting for query...</div>
+    </form>
 
     <hr class="break">
-    <h2>Configuration</h2>
-    <hr>
+      <h2>Help</h2>
+      <hr>
+    Do you have a download key? If so, you can query the server for some more information
+    about the file before downloading by using the section above.<br><br>
 
+    You can also directly link to the file through <b>https://THISDOMAIN/upload/YourDownloadKey</b><br><br>
+    For example, if your download key was 77e4ea6d79d44639da22f5635d9f77de.svg, <br>
+    the direct URL would be 
+    <b>https://THISDOMAIN/upload/77e4ea6d79d44639da22f5635d9f77de.svg</b><br>
 
-    </form>
+    <hr class="break">
+
     </div>
 	</body>
 
