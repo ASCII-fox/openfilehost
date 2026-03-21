@@ -9,8 +9,8 @@ maxsize = "15MB"
 filelifetime = 3600
 
 # How often the server should check if a file's lifetime has expired
-# and needs to be deleted
-deletionchecktime = 60
+# and needs to be deleted in seconds
+deletionchecktime = 3
 
 # Whether or not everything uploaded should be deleted when the server closes.
 # 1 = True. Delete everything on shutdown.

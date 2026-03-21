@@ -1,24 +1,82 @@
+# stdlib
+import asyncio
+import os
+import shutil
+import time
+import tomllib
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from pathlib import Path
+
+# packages
+import bitmath
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-import hashlib
-import os
-import bitmath
+
+# local modules
+from database import *
 from python.helpers import *
-import shutil
-import tomllib
 
 with open("server-config.toml", "rb") as f:
     config = tomllib.load(f)
 
 
-maxCapacity = bitmath.parse_string(config["server"]["maxsize"])
-print(maxCapacity.bytes)
-exit
+maxCapacity = bitmath.parse_string(config["server"]["maxsize"]) # Max server capacity in bytes
+jobFrequency = config["server"]["deletionchecktime"] # How many seconds between each cleanup job
 
-app = FastAPI()
+CYAN = "\033[96m"
+GREEN = '\033[32m'
+RESET = "\033[0m"
 
+print(f"""=== CONFIGURATION ===============
+SERVER CAPACITY: {maxCapacity.bytes} bytes
+JOB FREQUENCY: {jobFrequency} seconds
+=================================""")
+
+async def cleanupExpiredFiles():
+    """Runs every X seconds while server is up"""
+    while True:
+        # === CLEAN UP SECTION ===
+        try:
+            print(f"{CYAN}[JOB]{RESET} Running file cleanup job at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            time.sleep(1)  # test
+            
+            # TODO: IMPLEMENT
+            
+        except Exception as e:
+            print(f"{CYAN}[JOB]{RESET} Error in cleanup job: {e}")
+        
+        # === WAITING ===
+        try:
+            nextRunTime = datetime.now() + timedelta(seconds=jobFrequency)
+            print(f"{CYAN}[JOB]{RESET} Completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Next job at {nextRunTime.strftime('%Y-%m-%d %H:%M:%S')}")            
+
+            await asyncio.sleep(jobFrequency)
+        except asyncio.CancelledError:
+            print(f"{CYAN}[JOB]{RESET} Cancellation recieved.")
+            break
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+    # Start the background job
+    backgroundJob = asyncio.create_task(cleanupExpiredFiles())
+    print(f"{CYAN}[JOB]{RESET} File cleanup job started!")
+    
+    yield  # Server
+    
+    # try closing once server down
+    backgroundJob.cancel()
+    try:
+        await backgroundJob
+    except asyncio.CancelledError:
+        pass
+    print(f"{CYAN}[JOB]{RESET} File cleanup job stopped!")
+
+app = FastAPI(lifespan=lifespan)
 
 # Make sure upload directory exists
 UPLOAD_DIR = Path("upload")
@@ -73,13 +131,12 @@ async def uploadFile(file: UploadFile = File(...)):
     with filePath.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    # TODO: Add database input
-    # Store in database with original filename
-    # addFile(
-    #    name=originalFilename,           
-    #    downloadKey=downloadKey,          
-    #)
-    
+    addFile(
+            name=originalFilename,
+            downloadKey=downloadKey,
+            size=uploadedFileSize
+            )
+
     return {
         "status": "ok", 
         "message": "Upload succeeded!",
