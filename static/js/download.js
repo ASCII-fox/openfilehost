@@ -149,10 +149,8 @@ document.addEventListener("DOMContentLoaded", async function() {
   const queryKey = urlParams.get("query");
   
   if (queryKey) {
-    // Auto-fill the input field
     keyInput.value = queryKey;
     
-    // Perform the query automatically
     await performQuery(queryKey);
   }
 });
