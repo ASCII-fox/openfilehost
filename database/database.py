@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from python.helpers import getDirectorySize
 from pathlib import Path
 
-fileDB = sqlite3.connect("files.db")
+fileDB = sqlite3.connect("database/files.db")
 cursor = fileDB.cursor()
 
 # Ensure upload dir exists

@@ -1,4 +1,5 @@
 pyenv/
 __pycache__/
 upload/
-files.db
+ssl/certs/
+database/files.db

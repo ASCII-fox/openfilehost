@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 # local modules
-from database import * # UPLOAD_DIR is defined here
+from database.database import * # UPLOAD_DIR is defined here
 from python.helpers import *
 
 with open("server-config.toml", "rb") as f:
@@ -84,6 +84,51 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Add this middleware after creating the app
+@app.middleware("http")
+async def add_protocol_info(request: Request, call_next):
+    """Add protocol info to request state"""
+    # Check if request came through HTTPS
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    if forwarded_proto:
+        request.state.is_https = forwarded_proto == "https"
+    else:
+        request.state.is_https = request.url.scheme == "https"
+    
+    response = await call_next(request)
+    return response
+
+# Add this endpoint to check SSL status
+@app.get("/ssl-status")
+async def ssl_status():
+    """Check SSL certificate status"""
+    from pathlib import Path
+    from python.certificates import CertificateManager
+    
+    manager = CertificateManager()
+    
+    if manager.cert_file.exists():
+        # Get certificate expiration
+        import subprocess
+        result = subprocess.run(
+            ["openssl", "x509", "-in", str(manager.cert_file), "-noout", "-enddate"],
+            capture_output=True,
+            text=True
+        )
+        
+        if result.returncode == 0:
+            date_str = result.stdout.split('=')[1].strip()
+            return {
+                "status": "active",
+                "certificate_file": str(manager.cert_file),
+                "expires": date_str,
+                "ip_address": manager.ip_address
+            }
+    
+    return {
+        "status": "inactive",
+        "message": "No valid SSL certificate found. Run server with HTTPS to generate."
+    }
 
 
 # Setup directories 

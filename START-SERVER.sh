@@ -24,8 +24,11 @@ checkpackages() {
 }
 
 startserver() {
-  echo "Starting server..."
-  python run.py
+  python configure-server.py
+}
+
+generatecertificates() {
+  ./ssl/generateCertificates.sh
 }
 
 # Timer start
@@ -54,6 +57,20 @@ else
   source $ENVIRONMENT/bin/activate
 
   checkpackages
+fi
+
+# Check if the server needs to be public
+python3 -c "
+import sys
+sys.path.insert(0, '.')
+from python.helpers import needToGenerateCertificates
+sys.exit(needToGenerateCertificates())
+"
+# Generate certs if so, otherwise no
+if [ $? -eq 1 ]; then
+    generatecertificates
+else
+  state "Local server. Not generating any certificates."
 fi
 
 # Should assume at this point that we are in the environment and that packages 

@@ -1,5 +1,14 @@
 [server]
-port = 8000
+
+# Controls whether the server is publicly accessible via https and your ipv6 address.
+# 1 = True. Server will be public.
+# 0 = False (Fallback). Server will be http and LAN only
+shouldserverbepublic = 1
+
+# Ports and localhost
+http_port = 8000
+https_port = 8443
+local_host = "0.0.0.0"
 
 # Refers to the maximum total file size of all documents in /upload/
 # Case sensitive! Use values such as B, kb, kB, KiB, MB, MiB, GB, GiB
