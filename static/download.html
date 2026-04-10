@@ -8,7 +8,7 @@
     <link rel="icon" href="/static/res/icon.ico" type="image/x-icon">
     <link rel="stylesheet" href="/static/style.css">
 	</head>
-	<body>
+	<body onload="onLoad();checkCrypt();">
     <div class="header">
 		Open File Host - Query |
     <a href="/" class="sublink">Upload file</a>
@@ -19,23 +19,33 @@
     <form>
 <label for="keyInput" class="text-label hoverable">Enter your download key:</label>
 <div class="tooltip">This is shown to the uploader when the file is successfully uploaded to the server.</div>
-<input type="text" id="keyInput">
+<input type="text" id="keyInput" style="width:50%">
     <hr class="break">
 <button type="submit" id="queryButton" class="button" style="margin-top:1em;">Query key</button>
 
 <div id="keyInfo" style="margin-top:1em;white-space: pre-line;">Waiting for query...</div>
+    <hr class="break">
+
+<i id="linkToQuerySpan" style="white-space: pre-line;"></i><a href="" id="linkToQuery"></a>
+
+<p id="clientInfo"></p>
+<p id="cryptInfo"></p>
+
     </form>
 
     <hr class="break">
       <h2>Help</h2>
       <hr>
-    Do you have a download key? If so, you can query the server for some more information
-    about the file before downloading by using the section above.<br><br>
+      <p>
+    Do you have a download key? If so, you can query the server about it, and download/delete an associated file by using the 
+    section above. <br>
+    Files compressed through the upload interface will be decompressed on the browser before downloading.
+    </p>
 
-    You can also directly link to the file through <b>https://THISDOMAIN/upload/YourDownloadKey</b><br><br>
-    For example, if your download key was 77e4ea6d79d44639da22f5635d9f77de.svg, <br>
-    the direct URL would be 
-    <b>https://THISDOMAIN/upload/77e4ea6d79d44639da22f5635d9f77de.svg</b><br>
+    <p id="linking" style="white-space: pre-line;">
+
+    </p>
+
 
     <hr class="break">
 

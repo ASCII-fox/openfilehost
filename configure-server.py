@@ -4,7 +4,6 @@ import uvicorn
 import socket
 import tomllib
 import sys
-import logging
 from pathlib import Path
 
 # Add the project root to Python path
@@ -17,13 +16,13 @@ from python.certificates import get_ssl_context
 with open("server-config.toml", "rb") as f:
     config = tomllib.load(f)
 
-shouldServerBePublic = config["server"].get("shouldserverbepublic", 0) # Public HTTPS or LAN HTTP
+should_server_be_public = config["server"].get("shouldserverbepublic", 0) # Public HTTPS or LAN HTTP
 http_port = config["server"].get("http_port", 8000)
 https_port = config["server"].get("https_port", 8443)
 local_host = config["server"].get("local_host", "0.0.0.0")
 
+# Get public ipv6 ip
 def get_public_ipv6():
-    """Get the public IPv6 address of this machine"""
     try:
         s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         # Connect to Google's public IPv6 DNS
@@ -36,7 +35,7 @@ def get_public_ipv6():
             ip = ip.split('%')[0]
         return ip
     except Exception as e:
-        logger.error(f"Failed to get IPv6 address: {e}")
+        print(f"Failed to get IPv6 address: {e}")
         return None
 
 if __name__ == "__main__":
@@ -53,12 +52,12 @@ if __name__ == "__main__":
     
     cert_file, key_file = None, None
     # Get certificates if needed
-    if shouldServerBePublic == 1:
+    if should_server_be_public == 1:
         cert_file, key_file = get_ssl_context(
         ip_address=ipv6
     )
     
-    if cert_file and key_file and shouldServerBePublic == 1:
+    if cert_file and key_file and should_server_be_public == 1:
         print(f"  SSL certificates loaded")
         print(f"  Certificate: {cert_file}")
         print(f"  Private Key: {key_file}")
@@ -67,7 +66,7 @@ if __name__ == "__main__":
         print(f"\nStarting HTTPS server on port {https_port}")
         uvicorn.run(
             "server:app",
-            host="::",  # Listen on all IPv6 interfaces
+            host="::",   
             port=https_port,
             ssl_keyfile=str(key_file),
             ssl_certfile=str(cert_file),

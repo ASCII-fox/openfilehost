@@ -1,6 +1,10 @@
-/* TODO: IMPLEMENT */ 
 
-@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+@font-face {
+  font-family: 'Comic Neue';
+  src: url('fonts/ComicNeue-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
 :root {
   --text-color: #bbb;
@@ -53,7 +57,7 @@ input {
   height: 1em;
 }
 
-.button, .text-label {
+.button, .buttonDestructive, .text-label {
   background-color: var(--button-background-color);
   border: 2px solid var(--button-background-color);
   border-radius: 5px;
@@ -63,16 +67,23 @@ input {
 
 .text-label {
   text-decoration: underline;
+  border: none;
 }
 
-.button {
+.button, .buttonDestructive {
   border: 2px solid var(--button-border-color);
   cursor: pointer;
   transition: background 0.2s;
 }
 
+.buttonDestructive {
+  filter: invert(100%);
+  text-decoration: underline;
+  margin-left: 1em;
+}
 
-.button:hover {
+
+.button:hover, .buttonDestructive:hover {
   background-color: var(--button-background-color-hover);
 }
 
@@ -153,13 +164,19 @@ input {
 }
 
 @media screen and (max-width: 480px) {
+  body {
+    font-size: 0.8em;
+    overflow-wrap: break-word;
+  }
+
+
   .content, .configuration {
     float: default;
     width: 100%;
     margin: 3px 0;
   }
 
-  .button, .text-label, input {
+  .button, .buttonDestructive, .text-label, input {
     font-size: 0.8em;
   }
 }

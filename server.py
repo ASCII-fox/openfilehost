@@ -1,6 +1,6 @@
-# stdlib
 import asyncio
 import os
+import signal
 import shutil
 import time
 import tomllib
@@ -25,18 +25,27 @@ with open("server-config.toml", "rb") as f:
 maxCapacity = bitmath.parse_string(config["server"]["maxsize"]) # Max server capacity in bytes
 jobFrequency = config["server"]["deletionchecktime"] # How many seconds between each cleanup job
 fileMaxLifetime = config["server"]["maxfilelifetime"]
+serverLifetime = config["server"]["serverlifetime"]
+deleteFilesOnShutdown = config["server"]["deleteonshutdown"]
 basicAccess = config["interface"]["shouldfileconfigbepublic"]
 
 # Color variables
 CYAN = "\033[96m"
 GREEN = '\033[32m'
+ORANGE = "\033[38;2;255;165;0m"
 RESET = "\033[0m"
 JOB = f"{CYAN}[JOB]{RESET}"
+CONFIG = f"{ORANGE}[CONFIG]{RESET}"
 
 print(f"""=== CONFIGURATION ===============
 SERVER CAPACITY: {maxCapacity.bytes} bytes
 JOB FREQUENCY: {jobFrequency} seconds
 =================================""")
+
+def deleteAllFiles():
+    files = getAllFiles()
+    for key in files:
+        removeFile(key, "Automatic deletion on shutdown")
 
 async def cleanupExpiredFiles():
     """Runs every X seconds while server is up"""
@@ -49,7 +58,7 @@ async def cleanupExpiredFiles():
             expiredFiles = getExpiredFiles()  # Returns list
             for downloadKey in expiredFiles:
                 # Delete from uploads and db
-                removeFile(downloadKey)
+                removeFile(downloadKey, "Expired")
             
             print(f"{JOB} Deleted {len(expiredFiles)} files.")
         except Exception as e:
@@ -66,11 +75,39 @@ async def cleanupExpiredFiles():
             break
 
 
+
+async def autoShutdown():
+    """Automatically shuts down the server after serverLifetime seconds by sending SIGINT"""
+    global serverLifetime
+    print(f"{JOB} Server will shut down in {serverLifetime} seconds")
+    
+    try:
+        while (serverLifetime > 0):
+            await asyncio.sleep(1)
+            serverLifetime -= 1
+
+        print(f"{JOB} Server lifetime reached. Shutting down...")
+        
+        # Sending sigint to let uvicorn handle server termination gracefully
+        os.kill(os.getpid(), signal.SIGINT)
+        
+    except asyncio.CancelledError:
+        print(f"{JOB} Auto-shutdown task cancelled")
+        raise
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     
     # Start the background job
     backgroundJob = asyncio.create_task(cleanupExpiredFiles())
+
+    shutdownTask = None
+    if serverLifetime > 0:
+        shutdownTask = asyncio.create_task(autoShutdown())
+
+    if (deleteFilesOnShutdown == 1):
+        print(f"{CONFIG} All uploaded files will be deleted when this server shuts down.")
+
     
     yield  # Server
     
@@ -82,9 +119,13 @@ async def lifespan(app: FastAPI):
         pass
     print(f"{JOB} File cleanup job stopped!")
 
+    if (deleteFilesOnShutdown == 1):
+        print(f"{CONFIG} Deleting files...")
+        deleteAllFiles()
+
 app = FastAPI(lifespan=lifespan)
 
-# Add this middleware after creating the app
+#https handling
 @app.middleware("http")
 async def add_protocol_info(request: Request, call_next):
     """Add protocol info to request state"""
@@ -98,37 +139,6 @@ async def add_protocol_info(request: Request, call_next):
     response = await call_next(request)
     return response
 
-# Add this endpoint to check SSL status
-@app.get("/ssl-status")
-async def ssl_status():
-    """Check SSL certificate status"""
-    from pathlib import Path
-    from python.certificates import CertificateManager
-    
-    manager = CertificateManager()
-    
-    if manager.cert_file.exists():
-        # Get certificate expiration
-        import subprocess
-        result = subprocess.run(
-            ["openssl", "x509", "-in", str(manager.cert_file), "-noout", "-enddate"],
-            capture_output=True,
-            text=True
-        )
-        
-        if result.returncode == 0:
-            date_str = result.stdout.split('=')[1].strip()
-            return {
-                "status": "active",
-                "certificate_file": str(manager.cert_file),
-                "expires": date_str,
-                "ip_address": manager.ip_address
-            }
-    
-    return {
-        "status": "inactive",
-        "message": "No valid SSL certificate found. Run server with HTTPS to generate."
-    }
 
 
 # Setup directories 
@@ -143,7 +153,11 @@ async def root():
 @app.post("/upload")
 async def uploadFile(
     file: UploadFile = File(...), # User file
-    life: int = Form(...)  # User requested lifetime for the file
+    life: int = Form(...),  # User requested lifetime for the file
+    compressed: bool = Form(...), # Whether or not the file is compressed
+    originalFileSize: int = Form(...), # Original file size if compressed
+    encrypted: bool = Form(...), # Whether or not it was encrypted
+    salt: bytes = Form(...) # Salt for decryption
 ):    
     # Get current directory size
     currentCapacity = queryKnownSize()
@@ -188,6 +202,10 @@ async def uploadFile(
             name=originalFilename,
             downloadKey=downloadKey,
             size=uploadedFileSize,
+            originalSize=originalFileSize,
+            compressed=compressed,
+            encrypted=encrypted,
+            salt=salt,
             expireTime=life
             )
 
@@ -202,7 +220,7 @@ async def uploadFile(
 @app.get("/policies")
 async def getPolicies():
     if (basicAccess == 1):
-        return {"access": 1, "fileLifetime": fileMaxLifetime}
+        return {"access": 1, "fileLifetime": fileMaxLifetime, "serverLifetime": serverLifetime}
     else:
         return{"access": 0}
 
@@ -216,12 +234,29 @@ async def serveQuery(key: str):
         status = "ok"
         fileName = fileInfo[0]
         size = fileInfo[1]
-        createdDate = fileInfo[2]
-        expireDate = fileInfo[3]
+        originalSize = fileInfo[2]
+        compressed = fileInfo[3]
+        encrypted = fileInfo[4]
+        salt = fileInfo[5]
+        createdDate = fileInfo[6]
+        expireDate = fileInfo[7]
 
         return {"status": status,
                 "fileName": fileName,
-                "size": size,
-                "createdDate": createdDate,
+                "processedSize": size,
+                "downloadSize": originalSize,
+                "compressed": compressed,
+                "encrypted": encrypted,
+                "salt": salt,
+                "uploadedDate": createdDate,
                 "expireDate": expireDate}
+
+@app.delete("/delete")
+async def deleteRequestedFile(key: str):
+
+    if (removeFile(key, "User requested deletion") == 1):
+        return {"status": "ok"}
+    else:
+        return {"status": "bad"}
+
 

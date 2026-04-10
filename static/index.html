@@ -13,7 +13,7 @@
 <body onload="queryPolicies();">
     <!-- Header -->
     <div class="header">
-        Open File Host - Web Interface |
+        Open File Host - Upload |
         <a href="static/download.html" class="sublink">Query download key</a>
     </div>
 
@@ -22,11 +22,15 @@
 
         <h2>Policies</h2>
         <hr>
-        <p>
+        <b>
 
             This server's policies are:
-        </p>
+        </b>
         <p id="serverPolicies" style="white-space: pre-line;">
+
+        </p>
+        <b>Client information:</b>
+        <p id="clientInfo">
 
         </p>
 
@@ -41,6 +45,7 @@
 
             <button type="submit" id="uploadButton" class="button" style="margin-top:1em;" disabled>Upload</button>
             <div id="uploadResult" style="margin-top:1em;white-space: pre-line;"></div>
+            <div id="compressionResult" style="margin-top:1em;white-space: pre-line;"></div>
 
         </form>
         <h2>Important</h2>
@@ -54,6 +59,8 @@
         <li>Freely delete the file from the server. It will be stored until it expires.</li>
         </ol>
         Also understand that anyone you share the download key with will be able to do the above three actions.
+        <hr class="break">
+        If you would like to upload multiple files at once, you can place them into a zipped archive and upload.
         </p>
     </div>
 
@@ -68,17 +75,35 @@
         <label 
             for="fileLifetime" 
             class="text-label hoverable">
-        File lifetime (seconds)</label>
+        File lifetime (seconds):</label>
         <div class="tooltip">Controls how long the file exists on the server before being deleted. If this value is invalid, left empty, or exceeds the server policy rule, it will use the maximum time permitted.</div>
         <input type="text" id="fileLifetime">
         <br><br>
 
         <label 
-            for="randomizeFileName" 
+            for="encryptionPassword" 
+            class="text-label hoverable"
+            id="encryptLabel">
+        Encrypt with password:</label>
+        <div class="tooltip" id="encryptTooltip"><b>Leave this empty to upload the file unencrypted.</b> If non-empty, the file's contents will be encrypted with this as the password before uploading. Anyone querying the file will then be prompted for a password when downloading to reverse this encryption step.</div>
+        <input type="text" id="encryptionPassword">
+        <br><br>
+
+
+        <label 
+            for="removeFileName" 
             class="text-label hoverable">
-          Randomize file name</label>
-        <div class="tooltip">If enabled, will randomize the name of the file before uploading. Will NOT change the extension.</div>
-        <input type="checkbox" id="randomizeFileName">
+          Remove file name</label>
+        <div class="tooltip">If enabled, will set the name of the file to "NONE_PROVIDED" before uploading. Will NOT change the extension.</div>
+        <input type="checkbox" id="removeFileName">
+        <br><br>
+
+        <label 
+            for="compressFile" 
+            class="text-label hoverable">
+          Try to compress file</label>
+        <div class="tooltip">If enabled, will try to decrease the size of the file by a lossless compression process before uploading (gzip). The file will be automatically decompressed if downloaded via the query interface. This option might not do much or anything at all if you already compressed the file. The smaller of the two will be chosen to be uploaded regardless.</div>
+        <input type="checkbox" id="compressFile">
         <br><br>
 
 

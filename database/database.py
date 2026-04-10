@@ -26,35 +26,43 @@ cursor.execute("""
         name TEXT NOT NULL,
         pathName TEXT NOT NULL PRIMARY KEY,
         size INTEGER NOT NULL,
+        originalSize INTEGER NOT NULL,
+        compressed BOOL NOT NULL,
+        encrypted BOOL NOT NULL,
+        salt BLOB,
         createdDate TIMESTAMP,
         expireDate TIMESTAMP
     )
 """)
 
-def addFile(name, downloadKey, size, expireTime):
+def addFile(name, downloadKey, size, originalSize, compressed, encrypted, salt, expireTime):
     cursor.execute(
-        "INSERT INTO files (name, pathName, size, createdDate, expireDate) VALUES (?, ?, ?, ?, ?)",
-        (name, downloadKey, size, datetime.now(), datetime.now() + timedelta(seconds=expireTime))
+        "INSERT INTO files (name, pathName, size, originalSize, compressed, encrypted, salt, createdDate, expireDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, downloadKey, size, originalSize, compressed, encrypted, salt, datetime.now(), datetime.now() + timedelta(seconds=expireTime))
     )
-    print(f"{DATABASE} {ADDED} file {downloadKey}")
+    print(f"{DATABASE} {ADDED} file {UPLOAD_DIR}/{downloadKey}")
     fileDB.commit()
 
-def removeFile(downloadKey):
+def removeFile(downloadKey, reason):
     filePath = UPLOAD_DIR / downloadKey
+    rtnVal = 0
     if filePath.exists():
         filePath.unlink()
-        print(f"{DATABASE} {DELETED} file: {filePath}")
+        print(f"{DATABASE} {DELETED} file: {filePath} [{reason}]")
+        rtnVal = 1
     else:
         print(f"{DATABASE} File not found: {filePath}")
+        rtnVal = -1
 
 
     cursor.execute("DELETE FROM files WHERE pathName = ?", (downloadKey,))
     fileDB.commit()
+    return rtnVal
 
-# return an array in the form of [name, size, createdDate, expireDate]
+# return an array in the form of [name, size, compressed, createdDate, expireDate]
 def getFileInfoFromKey(downloadKey):
     cursor.execute(
-        "SELECT name, size, createdDate, expireDate FROM files WHERE pathName = ?",
+        "SELECT name, size, originalSize, compressed, encrypted, salt, createdDate, expireDate FROM files WHERE pathName = ?",
         (downloadKey,)
     )
     result = cursor.fetchone()
@@ -72,6 +80,13 @@ def getExpiredFiles():
         "SELECT pathName FROM files WHERE datetime(expireDate) < datetime('now')",
     )
     return [row[0] for row in cursor.fetchall()]
+
+def getAllFiles():
+    cursor.execute(
+        "SELECT pathName FROM files",
+    )
+    return [row[0] for row in cursor.fetchall()]
+
 
 # gets the size of upload/ according to this database
 def queryKnownSize():

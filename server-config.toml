@@ -5,29 +5,33 @@
 # 0 = False (Fallback). Server will be http and LAN only
 shouldserverbepublic = 1
 
-# Ports and localhost
+# How long until the server should shut down automatically. Set to any value <= 0 to never shut down 
+# on its own
+serverlifetime = 3600000 # Seconds
+
+# Ports and localhost, make sure these ports aren't blocked by your firewall!
 http_port = 8000
 https_port = 8443
 local_host = "0.0.0.0"
 
-# Refers to the maximum total file size of all documents in /upload/
+# Refers to the maximum total file size of all documents in /upload/. In other words, the directory will
+# not exceed this value, and file uploads will be denied if it would cause this value to be exceeded.
 # Case sensitive! Use values such as B, kb, kB, KiB, MB, MiB, GB, GiB
 maxsize = "15MB"
 
-# How long a file should exist on the server in seconds 
-maxfilelifetime = 3600
+# How long a file should exist on the server
+maxfilelifetime = 3600 # Seconds
 
-# Time between file deletion jobs in seconds.
-deletionchecktime = 3600
+# Time between file deletion jobs
+deletionchecktime = 120 # Seconds
 
 # Whether or not everything uploaded should be deleted when the server closes.
 # 1 = True. Delete everything on shutdown.
 # 0 = False (Fallback). Keep files.
-# Note that files are no longer automatically deleted when expiring once the server is down.
-deleteonshutdown = 0 
+deleteonshutdown = 1
 [interface]
 
-# Controls whether "filelifetime" are shown to users.
+# Controls whether "filelifetime" and (remaining) "serverlifetime" are shown to users.
 # 1 = True. Should be shown.
 # 0 = False (Fallback). Do not show.
 shouldfileconfigbepublic = 1
